@@ -149,7 +149,8 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     # Fit map to route bounds
     m.fit_bounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]])  # [[min_lat, min_lon], [max_lat, max_lon]]
     
-    return m
+    #return embeddable HTML representation of the map
+    return m._repr_html_()
 
 def get_route_directions_str(route):
     """
