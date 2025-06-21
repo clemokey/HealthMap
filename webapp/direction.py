@@ -14,6 +14,8 @@ import datetime
 import requests
 
 # Define functions
+
+#Deprecated: 
 def gestart_location():
     """
     Retrieve the user's current approximate geographic location using IP-based geolocation from ipinfo.io.
@@ -191,20 +193,21 @@ def get_route_directions_str(route):
 
     return "\n".join(lines)
 
-def process(address, req="map"):
+def process(start, destination):
     # Geocode the address
-    location = geocode_address(address)
+    start = geocode_address(start)
+    destination = geocode_address(destination)
     
     # Define the start and end coordinates (longitude, latitude)
-    start_coords = gestart_location()
-    end_coords = (location.longitude, location.latitude)
+    start_coords = (start.longitude, start.latitude)
+    end_coords = (destination.longitude, destination.latitude)
     
     # Get the route 
     route = get_route(start_coords, end_coords)
 
-    # Return the route map or directions depending on the request type. 
-    if req == "map":
-        return create_route_map(route, start_coords, end_coords)
-    else:
-       return get_route_directions_str(route)
+    # Return both route map and directions as a dictionary. 
+    return {
+        "map": create_route_map(route, start_coords, end_coords),
+        "instructions": get_route_directions_str(route)
+    }
    

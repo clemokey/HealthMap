@@ -5,7 +5,7 @@
 <div class="appbar">
     <div class="appbar-left">
         <img src="{% static 'webapp/logo.png' %}" alt="Logo" class="logo">
-        <span class="app-name">My Directions App</span>
+        <span class="app-name">{{ app_name }}</span>
     </div>
     <div class="appbar-right">
         <button class="menu-btn">&#9776;</button>
@@ -19,28 +19,36 @@
 
 <div class="main-container">
     <div class="sidebar">
-        <form class="directions-form"  method="post">
+        <form class="directions-form" method="post">
             {% csrf_token %}
             <label for="start">Start Address:</label>
-            <input type="text" id="start" name="start" placeholder="Enter start address">
+            <input type="text" id="start" name="start" placeholder="Enter start address" value="{{ start|default:'' }}">
+
             <label for="destination">Destination:</label>
-            <input type="text" id="destination" name="destination" placeholder="Enter destination">
+            <input type="text" id="destination" name="destination" placeholder="Enter destination" value="{{ destination|default:'' }}">
+
             <button type="submit">Get Directions</button>
         </form>
+
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+
         <div class="directions-section">
             <h3>Directions</h3>
             <div class="directions-list-container">
                 <p>
-                    {{ instructions|linebreaksbr }}
+                    {% if instructions %}
+                        {{ instructions|linebreaksbr }}
+                    {% endif %}
                 </p>
             </div>
         </div>
     </div>
-    <div class="map-container">
-        <!-- Map will be rendered here -->
-        <div id="map">
+    <div id="map-container">
+        {% if map %}
             {{ map|safe }}
-        </div>
+        {% endif %}
     </div>
 </div>
 
