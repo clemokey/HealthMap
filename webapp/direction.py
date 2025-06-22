@@ -194,13 +194,22 @@ def get_route_directions_str(route):
     return "\n".join(lines)
 
 def process(start, destination):
-    # Geocode the address
-    start = geocode_address(start)
-    destination = geocode_address(destination)
-    
-    # Define the start and end coordinates (longitude, latitude)
-    start_coords = (start.longitude, start.latitude)
-    end_coords = (destination.longitude, destination.latitude)
+    def normalize_location(value):
+        value = value.strip()
+        # If it's a coordinate string like "lon, lat"
+        if "," in value:
+            try:
+                lon, lat = map(float, value.split(","))
+                return (lon, lat)
+            except ValueError:
+                pass  # Not valid numbers, treat as address
+        
+        # Otherwise assume it's an address string
+        result = geocode_address(value)  # Should return an object with .longitude and .latitude
+        return (result.longitude, result.latitude)
+
+    start_coords = normalize_location(start)
+    end_coords = normalize_location(destination)
     
     # Get the route 
     route = get_route(start_coords, end_coords)

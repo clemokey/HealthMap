@@ -22,7 +22,7 @@
     <div class="sidebar">
         <form class="directions-form" method="post">
             {% csrf_token %}
-            <label for="start">Start Address:</label>
+            <label for="start">Start Point:</label>
             <input type="text" id="start" name="start" placeholder="Enter start address" value="{{ start|default:'' }}">
 
             <label for="destination">Destination:</label>
