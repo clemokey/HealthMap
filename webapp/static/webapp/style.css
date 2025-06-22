@@ -7,7 +7,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #1976d2;
+    background: #04213e;
     color: #fff;
     padding: 0 24px;
     height: 56px;
@@ -28,6 +28,10 @@ body {
 }
 .app-name {
     font-size: 1.3rem;
+    font-weight: bold;
+}
+.app-subtitle {
+    font-size: 0.8rem;
     font-weight: bold;
 }
 .appbar-right {

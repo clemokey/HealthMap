@@ -7,13 +7,16 @@ from django.apps import apps
 # Create your views here.
 def index(request):
     app_name = apps.get_app_config('webapp').verbose_name
-    
+    subtitle = apps.get_app_config('webapp').app_subtitle
+
     if request.method == "POST":
         start = request.POST.get("start")
         destination = request.POST.get("destination")
 
         if not start or not destination:
             return render(request, "webapp/index.html", {
+                "app_name": app_name,
+                "subtitle": subtitle,
                 "error": "Please enter both start and destination addresses.",
                 "instructions": "Enter start and destination addresses to get directions and route on the map.",
                 "map": generate_default_map()  # still show a map even on error
@@ -26,6 +29,7 @@ def index(request):
 
         context = {
             "app_name": app_name,
+            "subtitle": subtitle,
             "instructions": instructions,
             "map": mapview,
             "start": start,
@@ -35,6 +39,8 @@ def index(request):
 
     # Default GET request — show blank/default map
     return render(request, "webapp/index.html", {
+        "app_name": app_name,
+        "subtitle": subtitle,
         "instructions": "Enter start and destination addresses to get directions and route on the map.",
         "map": generate_default_map()
     })
