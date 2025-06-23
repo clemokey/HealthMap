@@ -114,7 +114,9 @@ dependencies:
   - zeromq=4.3.5=hd77b12b_0
   - zlib=1.2.13=h8cc25b3_1
   - pip:
+      - asgiref==3.8.1
       - branca==0.8.1
+      - django==5.2.3
       - folium==0.19.7
       - geographiclib==2.0
       - geopandas==1.1.0
@@ -126,6 +128,7 @@ dependencies:
       - pyproj==3.7.1
       - pytz==2025.2
       - shapely==2.1.1
+      - sqlparse==0.5.3
       - tzdata==2025.2
       - xyzservices==2025.4.0
-prefix: C:\Users\clemo\.conda\envs\HealthMap
+prefix: C:\Users\s1109454\AppData\Local\miniconda3\envs\HealthMap
