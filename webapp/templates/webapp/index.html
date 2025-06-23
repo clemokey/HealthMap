@@ -1,0 +1,66 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'webapp/style.css' %}">
+
+<div class="appbar">
+    <div class="appbar-left">
+        <img src="{% static 'webapp/logo.png' %}" alt="Logo" class="logo">
+        <span class="app-name">{{ app_name }}</span> <span>&nbsp;&nbsp;—&nbsp;&nbsp;</span>
+        <span class="app-subtitle">{{ subtitle }}</span>
+    </div>
+    <div class="appbar-right">
+        <button class="menu-btn">&#9776;</button>
+        <div class="menu-dropdown">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="sidebar">
+        <form class="directions-form" method="post">
+            {% csrf_token %}
+            <label for="start">Start Point:</label>
+            <input type="text" id="start" name="start" placeholder="Enter start address" value="{{ start|default:'' }}">
+
+            <label for="destination">Destination:</label>
+            <input type="text" id="destination" name="destination" placeholder="Enter destination" value="{{ destination|default:'' }}">
+
+            <button type="submit">Navigate</button>
+        </form>
+
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+
+        <div class="directions-section">
+            <h3>Directions</h3>
+            <div class="directions-list-container">
+                <p>
+                    {% if instructions %}
+                        {{ instructions|linebreaksbr }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div id="map-container">
+        {% if map %}
+            {{ map|safe }}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Simple menu toggle
+    document.querySelector('.menu-btn').onclick = function() {
+        document.querySelector('.menu-dropdown').classList.toggle('show');
+    };
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            document.querySelector('.menu-dropdown').classList.remove('show');
+        }
+    };
+</script>
