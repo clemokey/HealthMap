@@ -112,34 +112,62 @@ body {
     background: #1565c0;
 }
 .directions-section {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 15px;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
 }
-.directions-section h3 {
-    margin: 0 0 8px 0;
-    font-size: 1.1rem;
-}
 .directions-list-container {
+    max-height: 300px;
+    overflow-y: auto;
     flex: 1 1 auto;
     overflow-y: auto;
     background: #fff;
     border-radius: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #1565c0 transparent;
     border: 1px solid #e0e0e0;
-    padding: 8px;
+    padding: 8px 0;
     min-height: 80px;
     max-height: 100%;
 }
+
 .directions-list {
-    list-style: decimal inside;
+    list-style: none;
     margin: 0;
     padding: 0;
 }
+
 .directions-list li {
-    margin-bottom: 8px;
-    font-size: 0.98rem;
+    display: flex;
+    align-items: center;
+    padding: 10px 0 10px 0;
+    font-size: 14px;
+    line-height: 1.4;
 }
+
+.directions-list li::after{
+    content: "";
+    position: absolute;
+    left: 30px;
+    right: 0;
+    bottom: 0;
+    height: 1px; 
+    background: #ccc;
+}
+
+.directions-list .arrow img {
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+}
+
+.directions-list .text {
+    flex: 1;
+}
+
 
 /* Map container */
 #map-container {
@@ -180,4 +208,15 @@ body {
 /* Hide the trust notebook notice */
 #map-container > div > div > span {
     display: none !important;
+}
+
+.trip-summary {
+    background: #a1caf8;
+    padding: 0 10px;
+    border-radius: 5px;
+    border-top: 1px solid #eee;
+    line-height: 1.2;
+    font-size: small;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 16px;
 }

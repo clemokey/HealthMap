@@ -20,7 +20,10 @@
 
 <div class="main-container">
     <div class="sidebar">
-        <form class="directions-form" method="post">
+        <div style="border-bottom: 1px solid #eee; margin-bottom: 14px; font-size: small; order: 1;">
+            <p>Welcome to HealthMap! To use this application, enter the start and destination addresses in the spaces below to get directions. You can also enter coordinates in latitude and longitude pairs (lat, lng) or just the plain addresses.</p>
+        </div>
+        <form class="directions-form" method="post" style="order: 2;">
             {% csrf_token %}
             <label for="start">Start Point:</label>
             <input type="text" id="start" name="start" placeholder="Enter start address" value="{{ start|default:'' }}">
@@ -35,16 +38,50 @@
             <p style="color: red;">{{ error }}</p>
         {% endif %}
 
-        <div class="directions-section">
-            <h3>Directions</h3>
+        <div class="directions-section" style="order: 3;">
+            <span style="margin-bottom: 10px;">Directions</span>
             <div class="directions-list-container">
-                <p>
-                    {% if instructions %}
-                        {{ instructions|linebreaksbr }}
-                    {% endif %}
-                </p>
+                {% if instructions %}
+                    <ul class="directions-list">
+                        {% for step in instructions %}
+                            <li>
+                                <span class="arrow">
+                                    {% if step.type == 11 %}
+                                        <img src="{% static 'webapp/icons/straight.png' %}" alt="straight">
+                                    {% elif step.type == 0 %}
+                                        <img src="{% static 'webapp/icons/turn-left.png' %}" alt="left">
+                                    {% elif step.type == 1 %}
+                                        <img src="{% static 'webapp/icons/slight-left.png' %}" alt="slight left">
+                                    {% elif step.type == 2 %}
+                                        <img src="{% static 'webapp/icons/turn-right.png' %}" alt="right">
+                                    {% elif step.type == 3 %}
+                                        <img src="{% static 'webapp/icons/slight-right.png' %}" alt="slight right">
+                                    {% elif step.type == 4 %}
+                                        <img src="{% static 'webapp/icons/u-turn.png' %}" alt="u-turn">
+                                    {% else %}
+                                        <img src="{% static 'webapp/icons/straight.png' %}" alt="continue">
+                                    {% endif %}
+                                </span>
+                                <span class="text">
+                                    {{ step.instruction }}  
+                                    <small>({{ step.distance|floatformat:0 }} m, {{ step.duration|floatformat:0 }} sec)</small>
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p style="font-size: small;">{{ instructions_message }}</p>
+                {% endif %}
             </div>
         </div>
+        {% if eta %}
+        <div class="trip-summary" style="order: 4;">
+            <p>
+                <strong>Trip summary:</strong><br>
+                If you leave now, your ETA will be {{ eta }}. You will travel for {{ duration }} covering {{ distance_km }}.</p>
+            </p>
+        </div>
+        {% endif %}
     </div>
     <div id="map-container">
         {% if map %}

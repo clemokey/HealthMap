@@ -19,7 +19,8 @@ def index(request):
                 "app_name": app_name,
                 "subtitle": subtitle,
                 "error": "Please enter both start and destination addresses.",
-                "instructions": "Enter start and destination addresses to get directions and route on the map.",
+                "instructions": [],
+                "instructions_message": "Enter start and destination addresses to get directions and route on the map.",
                 "map": generate_default_map(),
                 "start": start,
                 "destination": destination,
@@ -29,12 +30,18 @@ def index(request):
         try:
             # Process the addresses
             processed_data = process(start, destination)
-            instructions = processed_data.get("instructions", "No instructions available.")
+            instructions = processed_data.get("instructions", [])
             mapview = processed_data.get("map", generate_default_map())
-            
+            eta = processed_data.get("eta", None)
+            distance_km = processed_data.get("distance_km", 0)
+            duration = processed_data.get("duration", "")
+
             context = {
                 "app_name": app_name,
                 "subtitle": subtitle,
+                "eta": eta,
+                "distance_km": distance_km,
+                "duration": duration,
                 "instructions": instructions,
                 "map": mapview,
                 "start": start,
@@ -46,7 +53,8 @@ def index(request):
                 "app_name": app_name,
                 "subtitle": subtitle,
                 "error": f"Invalid address or coordinates. Please check your input. {e}",
-                "instructions": "Enter start and destination addresses to get directions and route on the map.",
+                "instructions": [],
+                "instructions_messge": "Enter start and destination addresses to get directions and route on the map.",
                 "map": generate_default_map(),
                 "start": start,
                 "destination": destination,
@@ -58,7 +66,8 @@ def index(request):
     context = {
         "app_name": app_name,
         "subtitle": subtitle,
-        "instructions": "Enter start and destination addresses to get directions and route on the map.",
+        "instructions": [],
+        "instructions_message": "Enter start and destination addresses to get directions and route on the map.",
         "map": generate_default_map(),
     }
     return render(request, "webapp/index.html", context)

@@ -12,6 +12,8 @@ import pandas as pd
 import time
 import datetime
 import requests
+from django.utils import timezone
+from datetime import timedelta
 
 # Define functions
 
@@ -154,45 +156,6 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     #return embeddable HTML representation of the map
     return m._repr_html_()
 
-def get_route_directions_str(route):
-    """
-    Generate step-by-step directions, total distance, duration, and ETA from an OpenRouteService route GeoJSON as a formatted string.
-
-    Parameters:
-        route (dict): GeoJSON dictionary returned by OpenRouteService directions API.
-
-    Returns:
-        str: Formatted directions and summary information.
-    
-    Example:
-        >>> directions_str = get_route_directions_str(route)
-        >>> print(directions_str)
-    """
-    steps = route['features'][0]['properties']['segments'][0]['steps']
-
-    lines = ["Directions:"]
-    for i, step in enumerate(steps, start=1):
-        lines.append(f"{i}. {step['instruction']} ({step['distance']:.1f} meters)")
-
-    summary = route['features'][0]['properties']['summary']
-    distance_km = summary['distance'] / 1000
-    duration_sec = summary['duration']
-    hours = int(duration_sec // 3600)
-    minutes = int((duration_sec % 3600) // 60)
-
-    lines.append(f"\nTotal distance: {distance_km:.2f} km")
-
-    if hours > 0:
-        lines.append(f"Duration: {hours} hr {minutes} min")
-    else:
-        lines.append(f"Duration: {minutes} min")
-
-    start_time = datetime.datetime.now()
-    eta = start_time + datetime.timedelta(seconds=duration_sec)
-    lines.append(f"ETA: {eta.strftime('%I:%M %p')}")
-
-    return "\n".join(lines)
-
 def process(start, destination):
     def normalize_location(value):
         value = value.strip()
@@ -214,9 +177,25 @@ def process(start, destination):
     # Get the route 
     route = get_route(start_coords, end_coords)
 
+    # get ETA
+    summary = route['features'][0]['properties']['summary']
+    distance_km = summary['distance'] / 1000
+    duration_sec = summary['duration']
+
+    eta = timezone.now() + timedelta(seconds=duration_sec)
+    if eta.date() == timezone.now().date():
+        eta_str = eta.strftime("%I:%M %p").lstrip("0") + " today"
+    else:
+        eta_str = eta.strftime("%I:%M %p").lstrip("0") + " tomorrow"
+
+    duration = f"{duration_sec//3600} hr {(duration_sec%3600)//60} min" if duration_sec>=3600 else f"{(duration_sec%3600)//60} min"
+
     # Return both route map and directions as a dictionary. 
     return {
         "map": create_route_map(route, start_coords, end_coords),
-        "instructions": get_route_directions_str(route)
+        "instructions": route.get('features', [{}])[0].get('properties', {}).get('segments', [{}])[0].get('steps', []),
+        "eta": eta_str,
+        "duration": duration,
+        "distance_km": f"{distance_km:.2f} km",
     }
    
