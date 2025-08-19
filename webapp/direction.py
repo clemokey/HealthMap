@@ -135,7 +135,17 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     m = folium.Map(location=[(bbox[1] + bbox[3]) / 2, (bbox[0] + bbox[2]) / 2],
                    zoom_start=13)
     # Add the route to the map
-    folium.GeoJson(route, name="Route").add_to(m)
+    style = {
+        "color": "blue",
+        "weight": 6,      # line thickness
+        "opacity": 0.8
+    }
+
+    folium.GeoJson(
+        route,
+        name="Route",
+        style_function=lambda x: style
+    ).add_to(m)
     
     # Add start and end markers
     folium.CircleMarker(
