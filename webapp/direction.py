@@ -4,6 +4,8 @@ import geopy
 from geopy.geocoders import Nominatim
 from shapely.geometry import Point
 import folium
+from folium import plugins
+from folium.plugins import MarkerCluster
 import openrouteservice
 from openrouteservice import convert
 
@@ -134,19 +136,55 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     # Create map centered around bbox center (optional for initialization)
     m = folium.Map(location=[(bbox[1] + bbox[3]) / 2, (bbox[0] + bbox[2]) / 2],
                    zoom_start=13)
-    # Add the route to the map
-    style = {
-        "color": "blue",
-        "weight": 6,      # line thickness
-        "opacity": 0.8
-    }
-
-    folium.GeoJson(
-        route,
-        name="Route",
-        style_function=lambda x: style
+    # add basemaps
+    folium.TileLayer(
+        tiles='https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
+        attr='&copy; <a target="_blank" href="https://www.google.com/maps">Google</a>',
+        name='Google Map', show=True, control=True
     ).add_to(m)
-    
+
+    folium.TileLayer(
+        'CartoDB positron', name='Carto Light (Positron)', show=False, control=True
+    ).add_to(m)
+
+    folium.TileLayer(
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='&copy; Esri & contributors',
+        name='Esri World Imagery',
+        overlay=False, show=False, control=True
+    ).add_to(m)
+
+    # Toggle UI
+    folium.LayerControl(position='topright', collapsed=False).add_to(m)
+
+    # Add the route to the map as a polyline with arrows
+    coords = route["features"][0]["geometry"]["coordinates"]
+    coords_latlng = [(lat, lon) for lon, lat in coords]
+
+
+    # Outline (thicker, drawn first)
+    polyline1 = folium.PolyLine(
+        coords_latlng,
+        color="#05458F",
+        weight=12
+    ).add_to(m)
+
+    # Main route (thinner, drawn on top)
+    polyline = folium.PolyLine(
+        coords_latlng,
+        color="#237BDF",
+        weight=8,
+    ).add_to(m)
+
+    # Add arrows (> every ~100px along line)
+    plugins.PolyLineTextPath(
+        polyline,
+        "          >          ",
+        repeat=True,
+        offset=6,
+        attributes={"font-size": "14", "fill": "white", "font-weight": "bold"}
+    ).add_to(m)
+
     # Add start and end markers
     folium.CircleMarker(
         location=start_coords[::-1],
@@ -163,6 +201,8 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     # Fit map to route bounds
     m.fit_bounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]])  # [[min_lat, min_lon], [max_lat, max_lon]]
     
+    
+
     #return embeddable HTML representation of the map
     return m._repr_html_()
 
