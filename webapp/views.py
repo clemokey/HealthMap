@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import generic
 from django.http import HttpResponse
 from .direction import process
+from .direction import generate_default_map
 from django.apps import apps
 
 # Create your views here.
@@ -71,10 +72,3 @@ def index(request):
         "map": generate_default_map(),
     }
     return render(request, "webapp/index.html", context)
-
-
-def generate_default_map():
-    import folium
-    # Set to your preferred initial view
-    m = folium.Map(location=[47.811195, 13.033229], zoom_start=12)
-    return m._repr_html_()
