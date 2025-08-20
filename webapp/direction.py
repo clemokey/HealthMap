@@ -214,7 +214,7 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     ).add_to(m)
 
     for feat in features:
-        lon, lat = feat["geometry"]["coordinates"][:2]
+        lon, lat = [round(c, 6) for c in feat["geometry"]["coordinates"][:2]]
         props = feat.get("properties", {})
         amenity = (props.get("amenity") or "").lower()
         color = AMENITY_COLOR.get(amenity, DEFAULT_COLOR)
@@ -228,11 +228,32 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
         ]))
 
         popup_html = f"""
-            <b>{name}</b><br>
-            Amenity: {amenity or 'N/A'}<br>
-            {addr if addr else ''}
-            {f'<br><a href="{props.get("website")}" target="_blank">Website</a>' if props.get("website") else ''}
+            <div style="font-family:Arial, sans-serif; border-radius:12px;">
+                <div style="background:{color}; color:white; border-top-radius:12px; padding:8px 12px; font-size:14px;
+                            font-weight:bold; text-align:center; margin:0 !important">
+                    {name}
+                </div>
+
+                <!-- Body -->
+                <div style="padding:10px 12px; font-size:13px; color:#333; line-height:1.4;">
+                    <b>Amenity:</b> {amenity or 'N/A'}<br>
+                    {addr if addr else ''}<br>
+                    {f'<b>Opening hours:</b> {props.get("opening_hours")}' if props.get("opening_hours") else ''}
+                    {f'<br><a href="{props.get("website")}" target="_blank" style="color:{color};text-decoration:none;">🌐 Website</a>' if props.get("website") else ''}
+                </div>
+
+                <!-- Footer -->
+                <div style="padding:10px; text-align:center; background:#f9f9f9; border-bottom-radius:12px; border-top:1px solid #eee;">
+                    <button onclick="setDestination({lon}, {lat})"
+                        style="background:{color}; color:white; border:none; font-size:13px;
+                            padding:5px 10px; font-size: small; border-radius:5px; cursor:pointer;
+                            box-shadow:0 2px 4px rgba(0,0,0,.2);">
+                        Navigate Here
+                    </button>
+                </div>
+            </div>
         """
+
 
         folium.CircleMarker(
             [lat, lon],
@@ -269,6 +290,20 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
+    js = """
+    <script>
+    function setDestination(lat, lng) {
+        var field = parent.document.getElementById("destination");
+        if (field) {
+            field.value = lat + "," + lng;
+            field.focus();
+        } else {
+            alert("Destination field not found!");
+        }
+    }
+    </script>
+    """
+    m.get_root().html.add_child(folium.Element(js))
 
     # Toggle UI
     folium.LayerControl(position='topright', collapsed=True).add_to(m)
@@ -277,9 +312,138 @@ def create_route_map(route, start_coords, end_coords, zoom_start=13):
     return m._repr_html_()
 
 def generate_default_map():
-    import folium
+    # Create a default map centered at a specific location with the health facilities layer
     # Set to your preferred initial view
-    m = folium.Map(location=[47.811195, 13.033229], zoom_start=12)
+    # load health data
+    URL = "https://bamideleoke.dev/assets/health.json"
+
+    # Fetch JSON from URL
+    resp = requests.get(URL, timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
+    # Handle FeatureCollection vs list
+    features = data["features"] if isinstance(data, dict) and data.get("type") == "FeatureCollection" else data
+    
+    # Create map centered around bbox center (optional for initialization)
+    m = folium.Map(location=[47.811195, 13.033229], zoom_start=13)
+
+    # add basemaps
+    folium.TileLayer(
+        'CartoDB positron', name='Carto Light (Positron)', show=True, control=True
+    ).add_to(m)
+
+    folium.TileLayer(
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='&copy; Esri & contributors',
+        name='Esri World Imagery',
+        overlay=False, show=False, control=True
+    ).add_to(m)
+
+    AMENITY_COLOR = {'pharmacy': '#af6745', 'health_centre': '#da0be4', 'dentist': "#2b800f", 'doctors': '#8414e0', 'veterinary': '#b41483', 'social_facility': '#49902c', 'nursing_home': '#e985b6', 'clinic': "#e20171", 'hospital': '#ed9166'}
+    DEFAULT_COLOR = "#666666"
+
+    cluster = MarkerCluster(
+        name="Health Facilities", 
+        spiderfyOnMaxZoom=True,
+        showCoverageOnHover=False
+    ).add_to(m)
+
+    for feat in features:
+        lon, lat = [round(c, 6) for c in feat["geometry"]["coordinates"][:2]]
+        props = feat.get("properties", {})
+        amenity = (props.get("amenity") or "").lower()
+        color = AMENITY_COLOR.get(amenity, DEFAULT_COLOR)
+
+        name = props.get("name", "Unknown")
+        addr = ", ".join(filter(None, [
+            props.get("addr_street"),
+            props.get("addr_housenumber"),
+            props.get("addr_postcode"),
+            props.get("addr_city"),
+        ]))
+
+        popup_html = f"""
+            <div style="font-family:Arial, sans-serif; border-radius:12px;">
+                <div style="background:{color}; color:white; border-top-radius:12px; padding:8px 12px; font-size:14px;
+                            font-weight:bold; text-align:center; margin:0 !important">
+                    {name}
+                </div>
+
+                <!-- Body -->
+                <div style="padding:10px 12px; font-size:13px; color:#333; line-height:1.4;">
+                    <b>Amenity:</b> {amenity or 'N/A'}<br>
+                    {addr if addr else ''}<br>
+                    {f'<b>Opening hours:</b> {props.get("opening_hours")}' if props.get("opening_hours") else ''}
+                    {f'<br><a href="{props.get("website")}" target="_blank" style="color:{color};text-decoration:none;">🌐 Website</a>' if props.get("website") else ''}
+                </div>
+
+                <!-- Footer -->
+                <div style="padding:10px; text-align:center; background:#f9f9f9; border-bottom-radius:12px; border-top:1px solid #eee;">
+                    <button onclick="setDestination({lon}, {lat})"
+                        style="background:{color}; color:white; border:none; font-size:13px;
+                            padding:5px 10px; font-size: small; border-radius:5px; cursor:pointer;
+                            box-shadow:0 2px 4px rgba(0,0,0,.2);">
+                        Navigate Here
+                    </button>
+                </div>
+            </div>
+        """
+
+
+        folium.CircleMarker(
+            [lat, lon],
+            radius=6,
+            color=color,
+            weight=2,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.9
+        ).add_to(cluster).add_child(folium.Popup(popup_html, max_width=200))
+
+    # Legend (unchanged)
+    legend_items = "".join(
+        f'<div><span class="swatch" style="background:{col}"></span>{key.title()}</div>'
+        for key, col in AMENITY_COLOR.items()
+    )
+    legend_html = f"""
+    <style>
+    .legend-box {{
+    position: absolute; bottom: 16px; left: 16px; z-index: 9999;
+    background: white; padding: 10px 12px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15); font: 12px/1.2 Arial, sans-serif;
+    }}
+    .legend-box .title {{ font-weight: 700; margin-bottom: 6px; }}
+    .legend-box .swatch {{
+    display:inline-block; width:12px; height:12px; border-radius:50%;
+    margin-right:8px; vertical-align:middle; border:1px solid rgba(0,0,0,.2);
+    }}
+    .legend-box div {{ margin: 4px 0; white-space: nowrap; }}
+    </style>
+    <div class="legend-box">
+    <div class="title">Legend</div>
+    {legend_items}
+    </div>
+    """
+    m.get_root().html.add_child(folium.Element(legend_html))
+    js = """
+    <script>
+    function setDestination(lat, lng) {
+        var field = parent.document.getElementById("destination");
+        if (field) {
+            field.value = lat + "," + lng;
+            field.focus();
+        } else {
+            alert("Destination field not found!");
+        }
+    }
+    </script>
+    """
+    m.get_root().html.add_child(folium.Element(js))
+
+    # Toggle UI
+    folium.LayerControl(position='topright', collapsed=True).add_to(m)
+
+    #return embeddable HTML representation of the map
     return m._repr_html_()
 
 def process(start, destination):
