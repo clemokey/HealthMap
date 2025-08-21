@@ -8,7 +8,7 @@ body {
     justify-content: space-between;
     align-items: center;
     background: #04213e;
-    color: #fff;
+    color: #ffffff;
     padding: 0 24px;
     height: 56px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -29,6 +29,7 @@ body {
 .app-name {
     font-size: 1.3rem;
     font-weight: bold;
+    font-style: normal;
 }
 .app-subtitle {
     font-size: 0.8rem;
