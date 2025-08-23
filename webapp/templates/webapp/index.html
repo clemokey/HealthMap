@@ -1,58 +1,103 @@
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }} - {{ subtitle }}</title>
+    <link rel="stylesheet" href="{% static 'webapp/style.css' %}">
+</head>
+<body>
 
-<link rel="stylesheet" href="{% static 'webapp/style.css' %}">
-
-<div class="appbar">
-    <div class="appbar-left">
-        <img src="{% static 'webapp/logo.png' %}" alt="Logo" class="logo">
-        <span class="app-name">{{ app_name }}</span> <span>&nbsp;&nbsp;—&nbsp;&nbsp;</span>
-        <span class="app-subtitle">{{ subtitle }}</span>
-    </div>
-    <div class="appbar-right">
-        <button class="menu-btn">&#9776;</button>
-        <div class="menu-dropdown">
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <a href="#">Contact</a>
+    <div class="appbar">
+        <div class="appbar-left">
+            <img src="{% static 'webapp/logo.png' %}" alt="Logo" class="logo">
+            <span class="app-name">{{ app_name }}</span> <span>&nbsp;&nbsp;—&nbsp;&nbsp;</span>
+            <span class="app-subtitle">{{ subtitle }}</span>
         </div>
     </div>
-</div>
 
-<div class="main-container">
-    <div class="sidebar">
-        <form class="directions-form" method="post">
-            {% csrf_token %}
-            <label for="start">Start Point:</label>
-            <input type="text" id="start" name="start" placeholder="Enter start address" value="{{ start|default:'' }}">
+    <div class="main-container">
+        <div class="sidebar">
+            <div style="border-bottom: 1px solid #eee; margin-bottom: 14px; font-size: small; order: 1;">
+                <p>Welcome to HealthMap! To use this application, enter the start and destination addresses in the spaces below to get directions. You can also enter coordinates in latitude and longitude pairs (lat, lng) or just the plain addresses. Optionally, you can click a health amenit on the map, and click Navigate Here from the pop-up to set it as destination.</p>
+            </div>
+            <form class="directions-form" id="route-form" method="post" style="order: 2;">
+                {% csrf_token %}
+                <label for="start">Start Point:</label>
+                <input type="text" id="start" name="start" placeholder="Enter start address" value="{{ start|default:'' }}">
 
-            <label for="destination">Destination:</label>
-            <input type="text" id="destination" name="destination" placeholder="Enter destination" value="{{ destination|default:'' }}">
+                <label for="destination">Destination:</label>
+                <input type="text" id="destination" name="destination" placeholder="Enter destination" value="{{ destination|default:'' }}">
 
-            <button type="submit">Navigate</button>
-        </form>
+                <button type="submit">Navigate</button>
+            </form>
 
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
 
-        <div class="directions-section">
-            <h3>Directions</h3>
-            <div class="directions-list-container">
-                <p>
+            <div class="directions-section" style="order: 3;">
+                <span style="margin-bottom: 10px;">Directions</span>
+                <div class="directions-list-container">
                     {% if instructions %}
-                        {{ instructions|linebreaksbr }}
+                        <ul class="directions-list">
+                            {% for step in instructions %}
+                                <li>
+                                    <span class="arrow">
+                                        {% if step.type == 11 %}
+                                            <img src="{% static 'webapp/icons/straight.png' %}" alt="straight">
+                                        {% elif step.type == 0 %}
+                                            <img src="{% static 'webapp/icons/turn-left.png' %}" alt="left">
+                                        {% elif step.type == 1 %}
+                                            <img src="{% static 'webapp/icons/slight-left.png' %}" alt="slight left">
+                                        {% elif step.type == 2 %}
+                                            <img src="{% static 'webapp/icons/turn-right.png' %}" alt="right">
+                                        {% elif step.type == 3 %}
+                                            <img src="{% static 'webapp/icons/slight-right.png' %}" alt="slight right">
+                                        {% elif step.type == 4 %}
+                                            <img src="{% static 'webapp/icons/u-turn.png' %}" alt="u-turn">
+                                        {% else %}
+                                            <img src="{% static 'webapp/icons/straight.png' %}" alt="continue">
+                                        {% endif %}
+                                    </span>
+                                    <span class="text">
+                                        {{ step.instruction }}  
+                                        <small>({{ step.distance|floatformat:0 }} m, {{ step.duration|floatformat:0 }} sec)</small>
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p style="font-size: small; padding: 15px;">{{ instructions_message }}</p>
                     {% endif %}
+                </div>
+            </div>
+            {% if eta %}
+            <div class="trip-summary" style="order: 4;">
+                <p>
+                    <strong>Trip summary:</strong><br>
+                    If you leave now, your ETA will be {{ eta }}. You will travel for {{ duration }} covering {{ distance_km }}.</p>
                 </p>
             </div>
+            {% endif %}
+        </div>
+        <div id="map-container">
+            {% if map %}
+                {{ map|safe }}
+            {% endif %}
         </div>
     </div>
-    <div id="map-container">
-        {% if map %}
-            {{ map|safe }}
-        {% endif %}
-    </div>
-</div>
 
+    <div id="loading-overlay" class="overlay is-hidden" aria-hidden="true" aria-live="polite">
+    <div class="loader">
+        <div class="spinner"></div>
+        <div class="text">Finding best route…</div>
+    </div>
+    </div>
+    
+</body>
+</html>
 <script>
     // Simple menu toggle
     document.querySelector('.menu-btn').onclick = function() {
@@ -65,4 +110,27 @@
             document.querySelector('.menu-dropdown').classList.remove('show');
         }
     };
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('route-form');
+  const overlay = document.getElementById('loading-overlay');
+
+  if (!form || !overlay) return;
+
+  // Show overlay on submit
+  form.addEventListener('submit', function () {
+    overlay.classList.remove('is-hidden');
+    overlay.classList.add('is-active');
+    overlay.removeAttribute('aria-hidden');
+  });
+
+  // Safety: ensure overlay is hidden after page loads (new page render)
+  window.addEventListener('load', function () {
+    overlay.classList.remove('is-active');
+    overlay.classList.add('is-hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+  });
+});
 </script>
